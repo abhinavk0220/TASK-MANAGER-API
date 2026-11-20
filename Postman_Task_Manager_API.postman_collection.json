@@ -1,0 +1,45 @@
+{
+  "info": {
+    "name": "Task Manager API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create task",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Idempotency-Key", "value": "create-task-1"}
+        ],
+        "url": "http://127.0.0.1:8000/api/tasks/",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Pay rent\",\n  \"description\": \"Pay rent on the first\",\n  \"completed\": false,\n  \"due_date\": \"2026-12-01\",\n  \"priority\": \"high\",\n  \"recurrence\": \"monthly\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Create from text",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Idempotency-Key", "value": "from-text-1"}
+        ],
+        "url": "http://127.0.0.1:8000/api/tasks/from-text/",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Remind me to pay rent on the 1st of every month\"\n}"
+        }
+      }
+    },
+    {
+      "name": "List filtered tasks",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/api/tasks/?completed=false&priority=high&search=rent&ordering=due_date&page=1"
+      }
+    }
+  ]
+}

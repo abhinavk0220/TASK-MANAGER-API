@@ -1,0 +1,161 @@
+openapi: 3.0.3
+info:
+  title: Task Manager REST API
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:8000
+paths:
+  /api/tasks/:
+    get:
+      parameters:
+        - { in: query, name: completed, schema: { type: boolean } }
+        - { in: query, name: priority, schema: { type: string, enum: [low, medium, high] } }
+        - { in: query, name: due_date, schema: { type: string, format: date } }
+        - { in: query, name: parent, schema: { type: integer } }
+        - { in: query, name: search, schema: { type: string } }
+        - { in: query, name: ordering, schema: { type: string } }
+        - { in: query, name: page, schema: { type: integer } }
+      responses:
+        "200":
+          description: Paginated task list
+    post:
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /api/tasks/from-text/:
+    post:
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string }
+      responses:
+        "201":
+          description: Parsed and created
+        "400": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Error" }
+  /api/tasks/{id}/:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      responses:
+        "200": { description: A task }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      responses:
+        "200": { description: Updated }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      responses:
+        "200": { description: Updated }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/tasks/{id}/subtasks/:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      responses:
+        "200": { description: Subtask list }
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201": { description: Subtask created }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/tasks/{id}/breakdown/:
+    post:
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema: { type: string }
+      responses:
+        "201": { description: Subtasks created }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+components:
+  schemas:
+    TaskInput:
+      type: object
+      required: [title, description]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        completed: { type: boolean, default: false }
+        due_date: { type: string, format: date, nullable: true }
+        priority: { type: string, enum: [low, medium, high], default: medium }
+        recurrence: { type: string }
+    Task:
+      allOf:
+        - $ref: "#/components/schemas/TaskInput"
+        - type: object
+          properties:
+            id: { type: integer }
+            parent: { type: integer, nullable: true }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                required: [field, issue]
+                properties:
+                  field: { type: string }
+                  issue: { type: string }
+  responses:
+    Error:
+      description: Consistent API error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
